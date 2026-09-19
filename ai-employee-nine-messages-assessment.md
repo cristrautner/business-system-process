@@ -152,8 +152,8 @@ Designer brief (added to the client file):
 [designer] is the designer on [project]. when she asks for a brief, return the client's objective in one line, the deliverable, the constraints, the examples the client liked, and the one thing to avoid. under 200 words.
 ```
 
-Maintenance rule (added to the client file). The pasted copy cut off after “one”; “screen” is the likely ending given message 1, but confirm against the article:
+Maintenance rule (added to the client file):
 
 ```
-every line added to this file applies to every run after it. keep it under one [screen]
+every line added to this file applies to every run after it. keep it under one screen.
 ```
