@@ -10,7 +10,7 @@ Adopt four of the nine, skip three, and fold the remaining two into things that 
 
 ## What already runs
 
-Six routines were active on 2026-09-19. Five are scheduled from Cowork on the Mac; LSI Shipping Watcher is a cloud routine (weekdays, noon UTC, Gmail drafts only). Cowork's local scheduler is invisible to the cloud tools, so the mapping below came from Cris, not from a listing.
+Six routines were active on 2026-09-19, all visible in the Routines section of the Claude Code desktop app's sidebar. Five run locally from the desktop app on the Mac; LSI Shipping Watcher is a cloud routine (weekdays, noon UTC, Gmail drafts only). The local ones are invisible to the cloud-side routine listing, so the mapping below came from the sidebar, not from a query.
 
 | Existing routine | Nearest of the nine messages |
 |---|---|
