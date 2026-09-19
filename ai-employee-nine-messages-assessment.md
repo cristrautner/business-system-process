@@ -8,7 +8,22 @@ Written 2026-09-19. The “what already exists” observations are a snapshot fr
 
 Adopt four of the nine, skip three, and fold the remaining two into things that already exist. The wrapper is content marketing, but the nine messages themselves are sensible. The invoice ladder and the revision log are the two that earn their keep.
 
-Caveat on coverage: from the Claude Code session that produced this, only one recurring routine was visible, the LSI Shipping Watcher (weekdays, noon UTC, Gmail drafts only). Cowork's desktop-scheduled tasks don't appear in that listing, so anything living there was not compared against.
+## What already runs
+
+Six routines were active on 2026-09-19. Five are scheduled from Cowork on the Mac; LSI Shipping Watcher is a cloud routine (weekdays, noon UTC, Gmail drafts only). Cowork's local scheduler is invisible to the cloud tools, so the mapping below came from Cris, not from a listing.
+
+| Existing routine | Nearest of the nine messages |
+|---|---|
+| Daily brief | 2, the morning read |
+| Daily lead capture | 2 (the “new client lead” slice) |
+| Commitments dig | the teaser's “promise made on a call and never written down”; feeds 4 and 5 |
+| Weekly receivables | 7, the invoice chase |
+| Weekly memory consolidation | 1's maintenance loop, “every correction becomes a line at the top” |
+| LSI Shipping Watcher | none; it's the gate (9) in practice: drafts only, never send |
+
+A seventh, Weekly client updates, ran in August and maps to 5, the Friday status draft. Whether it's still scheduled wasn't confirmed.
+
+So the “build these four” list below is really: check whether Weekly receivables already drafts the three-touch ladder and stops at touch three (if not, add that); build the revision log; build the proposal follow-up ladder; and revive or confirm Weekly client updates as the Friday status. The client file consolidation still applies, and now has six prompts to consolidate from.
 
 ## Build these four
 
