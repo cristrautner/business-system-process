@@ -40,13 +40,15 @@ STEPS
 3. Read the thread. Search Gmail for all messages to or from the client contact's email address (and anyone else from the same domain who appears in those threads) from the project's Duration start date, or from the project's Created time if Duration is empty, to today. Read every message from the client side in full. Read Cris's replies for what was sent and when.
 
 4. Identify revision requests. A revision request is any client message asking for a change to something Infusionmedia already delivered: an edit, a swap, a redo, an addition to a delivered piece, a "can you also." A question is not a request. Approval is not a request. Content the client supplies for the first time (their logo, their copy) is not a request.
-   Group requests into rounds. A round is one client message, or a cluster of client messages within 48 hours, that arrives after a deliverable was sent and before the next deliverable goes back. Number rounds in order. If the project has distinct deliverables (a flyer and a website, or two book covers), keep a separate round count per deliverable and say so.
+   Group requests into rounds. A round is one client message, or a cluster of client messages within 48 hours, that arrives after a deliverable was sent and before the next deliverable goes back. Number rounds in order.
+   Rounds are counted per deliverable, never per project. The Terms give "every deliverable" 2 rounds, so first establish the deliverable list from the baseline, then from the project's Tasks and Type of Work, then from the thread. A book, for example, has at least three: the edited manuscript, the interior layout, and the cover, each with its own 2 rounds, and they run in sequence (manuscript rounds finish and the manuscript is approved before interior layout starts). A website has a design milestone and a build; a brand project has a logo, then collateral. Keep a separate round count and a separate approval date per deliverable, and label every request with the deliverable it belongs to. A request that touches an already-approved deliverable while a later one is in progress (a text change during interior layout, after the manuscript was approved) belongs to the approved deliverable and is classified under 5b(ii), not counted as a round of the current one.
 
 5. Classify each request against the baseline.
    a. In scope: a change to an agreed deliverable, requested before that deliverable was approved in writing, within the round count (2 unless overridden).
    b. Out of scope, on any of these grounds, and name which: (i) a new deliverable not in the baseline; (ii) a change to a deliverable the client already approved in writing, which the Terms treat as new work regardless of round count; (iii) a round beyond the included count; (iv) a change to agreed quantity or format. Look for the approval in the thread: "approved," "looks good, go ahead," "send it to print," a signed proof. Quote it and its date in the log; the approval is the lock.
    c. Custom tools and consulting projects (Type of Work includes Systems - Build, Systems - Support, or the project is plainly a tool or advisory engagement): don't count rounds. Instead, for the 30 days after delivery, classify each report as Defect (doesn't do what the scope said; on us) or New feature (scope didn't describe it; a change). After 30 days, everything is new work. Say in the log that the tool rule applied.
-   d. Unknown: no baseline beyond the master Terms, or the baseline doesn't address the request. When in doubt, mark Unknown, not In scope. Cris decides; you don't.
+   d. On us: the request corrects something Infusionmedia got wrong against what was agreed (a typo we introduced, a spec we missed, a file that didn't match the approved proof). The Terms say "changes we need to make to match what was originally agreed are on us." These are not rounds and don't count toward the limit; list them so the record is complete, marked On us.
+   e. Unknown: no baseline beyond the master Terms, or the baseline doesn't address the request. When in doubt, mark Unknown, not In scope. Cris decides; you don't.
 
 6. Determine status for each request: Shipped (date Infusionmedia sent the revised item), Open (days since the request with no revised item sent), or Waiting on client (Infusionmedia asked a clarifying question and the client hasn't answered; days since).
 
@@ -54,7 +56,8 @@ STEPS
 
    ## Revision Log
    Log built YYYY-MM-DD from N client messages, DATE to DATE.
-   Scope baseline: [one or two lines, with source]. Rounds included: X. Rounds to date: Y.
+   Scope baseline: [one or two lines, with source]. Rounds included per deliverable: X.
+   Deliverables: Manuscript (approved 08-14, 2 rounds), Interior (in progress, 1 round), Cover (approved 09-02, 3 rounds, over by 1).
 
    | Round | Date | Deliverable | Request (client's words, short) | Scope | Owner | Status |
    | 1 | 2026-08-14 | Flyer | "swap the headline photo for the crew shot" | In scope | Us | Shipped 08-15 |
@@ -66,7 +69,7 @@ STEPS
    ### Oldest open item
    The single client request that has waited longest with nothing sent back, and how long.
 
-8. Set Revision Rounds on the project to Y (the highest round number, or the highest across deliverables if split). Do not change Status, Rounds Included, Additional Scope on any task, or any other field. Do not create tasks or change orders.
+8. Set Revision Rounds on the project to the highest round count reached by any single deliverable. On a book where the manuscript took 2, the interior 1, and the cover 3, that's 3, and the Scope Check card reads "⚠️ Round 3 of 2" because one deliverable is over. The card can only carry one number; the per-deliverable breakdown lives in the log. Do not change Status, Rounds Included, Additional Scope on any task, or any other field. Do not create tasks or change orders.
 
 9. Report to Cris: project, rounds to date vs included, count of open items and the oldest one, the flagged list, and the Scope Check reading. For a sweep, one line per project rebuilt, then the flagged items across all of them. Flagged items are noteworthy. "No new client messages" is not noteworthy.
 
