@@ -51,6 +51,16 @@ Order is cheapest and highest-value first.
 
 Messages 5 and 6 can't run without a definition of “active client” and “proposal sent,” and 7 needs actual payment terms. So the real first step is the client file: one screen of context, written badly, today.
 
+## Decisions and changes so far
+
+**2026-09-20, proposal follow-up ladder.** Cadence is 7 / 14 / 21 days from Proposal Sent, not the article's 3 / 7 / 14. The day-7 and day-14 touches are conditional: they draft only when there's something real to add (a relevant fact, an example, a question about their review process). The day-21 touch is fixed and is the close: yes, no, or a date. Proposals should carry a validity date so the close reads as a courtesy reminder rather than pressure. Drafts only; Cris sends. Optional later refinement: pick a slower or two-touch schedule when Referral Source is LNA or Existing Client.
+
+**2026-09-20, Notion schema changes (The Pond).**
+- Tasks: “Actual Time” renamed to “Untracked Hours.” “Actual Time (blended)” now equals Tracked Time plus Untracked Hours, rounded to the nearest 0.25 with a 0.25 floor, instead of ignoring manual hours whenever a timer session exists. Property ID unchanged, so the Projects “Total Actual Time” rollup is unaffected. Both field descriptions still need a manual edit in the Notion UI.
+- Opportunities: added “Proposal Sent” (date). No rows were at the Proposal stage at the time, so nothing to backfill. This is the ladder's trigger and clock, together with Stage = Proposal.
+
+**Tabled.** Week in Review stays as is. OKRs and Teams flagged as removable but not removed.
+
 ## Author's own rollout order
 
 From the article's closing list:
