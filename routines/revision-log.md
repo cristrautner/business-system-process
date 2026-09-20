@@ -13,8 +13,9 @@ Decided 2026-09-20. See the Decisions entry in The Pond and `ai-employee-nine-me
 | Trigger | On demand: “run the revision log for [project name].” With no project named, it sweeps every project at In Progress, In Review, or Approved that has a Client Contact. |
 | Connectors | Notion (read Projects, People, Docs, Tasks; write the log to the project page body and set Revision Rounds), Gmail (read only). |
 | Notion data sources | Projects `collection://de1db54c-acf6-4290-a334-ecf1f7a3b4ad`, People `collection://11200559-f1b2-81c9-883a-000b54c28bed`, Docs `collection://998e1918-61ac-46f6-98b1-06a8900c0789`, Tasks `collection://1eb271b5-e90e-4b6d-9b01-a4d78de8b953` |
-| Fields added 2026-09-20 | On Projects: `Rounds Included` (number, from the proposal), `Revision Rounds` (number, set by this command), `Scope Check` (formula, shows “Round 3 of 2” with a warning when over). |
-| Prerequisite habit | At kickoff, set Rounds Included from the proposal, and put the scope statement in the project page's Goal and Billing sections or in a related Docs page. |
+| Fields added 2026-09-20 | On Projects: `Rounds Included` (number, optional override; blank means the house default of 2), `Revision Rounds` (number, set by this command), `Scope Check` (formula, shows “Round 3 of 2” with a warning when over; assumes 2 when Rounds Included is blank). |
+| Scope sources | Master Terms & Conditions v4.0 (Notion, Backend), the proposal or design doc (Google Docs, business workspace), the Xero invoice for verbal clients, the project page's Goal and Billing sections, and the casual email where that's all there is. |
+| Prerequisite habit | Set Rounds Included only when a proposal departs from 2. Put the scope statement, or a link to the design doc, in the project page's Goal and Billing sections. |
 
 ## The prompt
 
@@ -28,14 +29,24 @@ If no project is named, sweep: every project whose Status is In Progress, In Rev
 STEPS
 1. Read the project. From the Projects row take Name, Status, Client Contact, Duration (start), Rounds Included, Revision Rounds, Docs, Tasks, Billing Structure, Final Amount, and the page body (the Goal, Purpose, Billing, and Resources sections). From Client Contact follow the People relation and take Email, Company, Name. From Docs read any related page, especially Type = Client Information. From Tasks note any task with Additional Scope checked.
 
-2. Establish the scope baseline. The baseline is what the client agreed to pay for: deliverables, quantities, and the number of revision rounds. Sources, in order: Rounds Included on the project; the Billing and Goal sections of the project page; related Docs pages; a proposal reachable from the linked CRM Opportunity's Email Link or URL if one exists. Quote the baseline back in the log in one or two lines with its source named. If you cannot find a scope statement anywhere, write "Scope baseline: none on file" and still build the log. Never infer scope from what was delivered; that's circular.
+2. Establish the scope baseline. The baseline is what the client agreed to pay for: deliverables, quantities, and the revision terms. Sources, in order:
+   a. Master Terms & Conditions v4.0 (Notion, Backend, https://app.notion.com/p/3dd00559f1b28171be15e41d4dc6e060), section "Changes After We've Agreed on Scope." This is the default for every project: up to 2 rounds of revisions per deliverable unless the proposal says otherwise; written approval of a deliverable locks it; changes after approval are new work at $150/hour with prior approval or a flat fee the proposal names; changes needed to match what was originally agreed are on us. Custom tools and consulting do not work in rounds (see 5c).
+   b. Rounds Included on the project, if set. It overrides the default of 2 for that project only.
+   c. The proposal or design doc. Cris's proposals and design docs live in Google Docs in the business workspace; if Drive access is available, find the doc for this client and read the deliverables list. If the project page's Resources section links to it, use that link.
+   d. For clients with no proposal (verbal agreements with long-standing clients), the invoice is the scope: pull the Xero invoice(s) for this client and project and read the line items. A casual email confirming the work counts too; quote it.
+   e. The project page's Goal and Billing sections, and any related Docs page.
+   Quote the baseline in the log in two or three lines with each source named. If the only source is the master Terms (no proposal, no invoice, no email), say so: "Scope baseline: master Terms only; deliverables not stated anywhere." Still build the log. Never infer scope from what was delivered; that's circular.
 
 3. Read the thread. Search Gmail for all messages to or from the client contact's email address (and anyone else from the same domain who appears in those threads) from the project's Duration start date, or from the project's Created time if Duration is empty, to today. Read every message from the client side in full. Read Cris's replies for what was sent and when.
 
 4. Identify revision requests. A revision request is any client message asking for a change to something Infusionmedia already delivered: an edit, a swap, a redo, an addition to a delivered piece, a "can you also." A question is not a request. Approval is not a request. Content the client supplies for the first time (their logo, their copy) is not a request.
    Group requests into rounds. A round is one client message, or a cluster of client messages within 48 hours, that arrives after a deliverable was sent and before the next deliverable goes back. Number rounds in order. If the project has distinct deliverables (a flyer and a website, or two book covers), keep a separate round count per deliverable and say so.
 
-5. Classify each request against the baseline. In scope: the request is a change to an agreed deliverable within the agreed round count. Out of scope: a new deliverable, a change to something already approved, a request beyond Rounds Included, or a request that changes the agreed quantity or format. Unknown: no baseline on file, or the baseline doesn't address it. When in doubt, mark Unknown, not In scope. Cris decides; you don't.
+5. Classify each request against the baseline.
+   a. In scope: a change to an agreed deliverable, requested before that deliverable was approved in writing, within the round count (2 unless overridden).
+   b. Out of scope, on any of these grounds, and name which: (i) a new deliverable not in the baseline; (ii) a change to a deliverable the client already approved in writing, which the Terms treat as new work regardless of round count; (iii) a round beyond the included count; (iv) a change to agreed quantity or format. Look for the approval in the thread: "approved," "looks good, go ahead," "send it to print," a signed proof. Quote it and its date in the log; the approval is the lock.
+   c. Custom tools and consulting projects (Type of Work includes Systems - Build, Systems - Support, or the project is plainly a tool or advisory engagement): don't count rounds. Instead, for the 30 days after delivery, classify each report as Defect (doesn't do what the scope said; on us) or New feature (scope didn't describe it; a change). After 30 days, everything is new work. Say in the log that the tool rule applied.
+   d. Unknown: no baseline beyond the master Terms, or the baseline doesn't address the request. When in doubt, mark Unknown, not In scope. Cris decides; you don't.
 
 6. Determine status for each request: Shipped (date Infusionmedia sent the revised item), Open (days since the request with no revised item sent), or Waiting on client (Infusionmedia asked a clarifying question and the client hasn't answered; days since).
 
@@ -65,6 +76,7 @@ Read Gmail, never send, never draft to the client from this command. Write only 
 
 ## What to edit before the first run
 
-- The first three projects will have no Rounds Included set. Fill it from the proposal before running, or the Scope Check formula stays blank and every request classifies as Unknown.
+- Rounds Included can stay blank on most projects; the master Terms make 2 the default and the Scope Check formula assumes 2 when the field is empty. Set it only where a proposal departs from that.
+- Drive access to the business workspace's client folders is the one dependency that isn't in place yet. Until it is, source c falls back to whatever the project page links or quotes.
 - Sandhill's social work doesn't fit this shape: revisions there are tracked as status changes in the Posts database (Sent to Dusty, Backburner, Approved), not in email rounds. Don't point this command at Sandhill; the Posts kanban is already the revision log for that work.
 - Corrections from the first runs go back into this file as new lines under the classification rules in step 5, per the client-file maintenance rule.

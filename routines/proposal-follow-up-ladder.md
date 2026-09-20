@@ -11,7 +11,7 @@ Decided 2026-09-20. See the Decisions entry in The Pond and `ai-employee-nine-me
 | Runs | Weekdays, 8:00 AM Central. In the Claude Code desktop scheduler use local time. As a cloud routine the cron is `0 13 * * 1-5` during daylight time and `0 14 * * 1-5` after the first Sunday in November. |
 | Connectors | Notion (read Opportunities and People; append to Notes and Next Action), Gmail (search sent and drafts; create drafts), web search. |
 | Notion data sources | Opportunities `collection://29b00559-f1b2-807b-a514-000b9c3e8c7f`, People `collection://11200559-f1b2-81c9-883a-000b54c28bed` |
-| Prerequisite habit | When a proposal goes out: set Stage to Proposal and fill Proposal Sent the same day. Put a validity date in the proposal itself. |
+| Prerequisite habit | When a proposal goes out: set Stage to Proposal and fill Proposal Sent the same day. The 30-day price validity is already in the master Terms; no need to add a date to the proposal unless it differs. |
 
 ## The prompt
 
@@ -22,7 +22,7 @@ THE LADDER
 Days are counted from the Proposal Sent date on the Opportunity.
 - Day 7, conditional: a short note that gives them something new. One relevant fact from their industry or market, one comparable piece of Infusionmedia work with a link, or one question about their review process. If you cannot find something genuinely useful to say, do not draft. Skip and report "nothing to add."
 - Day 14, conditional: a different angle from day 7. If day 7 was a fact, day 14 is an example or a question, and vice versa. Same skip rule.
-- Day 21, fixed: the close. Ask plainly for a yes, a no, or a date by which they'll decide. If the proposal carried a validity date (check Notes on the Opportunity and the proposal itself via Email Link or URL), mention it as a reminder, not a threat. This touch always drafts.
+- Day 21, fixed: the close. Ask plainly for a yes, a no, or a date by which they'll decide. Infusionmedia's Master Terms (v4.0, "Starting Late or Pausing") say a proposal's price is good for 30 days, and every proposal incorporates the Terms, so the price holds through Proposal Sent + 30 days. Mention that date as a plain reminder, not a threat: the day-21 note lands nine days before it lapses. If the proposal or the Opportunity's Notes name a different validity date, use that one instead. This touch always drafts.
 Warm pipeline rule: if Referral Source is LNA or Existing Client, skip the day 7 touch entirely. Those prospects get day 14 (conditional) and day 21 (fixed) only.
 
 STEPS
