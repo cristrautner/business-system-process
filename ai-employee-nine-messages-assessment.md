@@ -59,6 +59,10 @@ Messages 5 and 6 can't run without a definition of “active client” and “pr
 - Tasks: “Actual Time” renamed to “Untracked Hours.” “Actual Time (blended)” now equals Tracked Time plus Untracked Hours, rounded to the nearest 0.25 with a 0.25 floor, instead of ignoring manual hours whenever a timer session exists. Property ID unchanged, so the Projects “Total Actual Time” rollup is unaffected. Both field descriptions still need a manual edit in the Notion UI.
 - Opportunities: added “Proposal Sent” (date). No rows were at the Proposal stage at the time, so nothing to backfill. This is the ladder's trigger and clock, together with Stage = Proposal.
 
+**2026-09-20, revision log.** Built as an on-demand command (`routines/revision-log.md`), not a daily routine, with a weekly sweep mode. Reads the client email thread from the project's start, numbers rounds (one client message or a 48-hour cluster after a deliverable), classifies each request as in scope, out of scope, or unknown against a quoted baseline, writes a Revision Log section to the project page, and sets Revision Rounds. Never infers scope from what was delivered; never decides a change order, only flags. Sandhill excluded: the Posts kanban is already its revision log. Added to Projects: Rounds Included (number), Revision Rounds (number), Scope Check (formula, “⚠️ Round 3 of 2”). Recorded in the Decisions database.
+
+**2026-09-20, proposal ladder routine.** Prompt written (`routines/proposal-follow-up-ladder.md`) and recorded in the Decisions database.
+
 **Tabled.** Week in Review stays as is. OKRs and Teams flagged as removable but not removed.
 
 ## Author's own rollout order
