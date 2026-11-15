@@ -26,7 +26,8 @@ Two hours after a client appointment on the contractor's Google Calendar ends, t
 - Text messages (US business texting means A2P 10DLC registration, which isn't worth it until email proves out)
 - Multi-step sequences, like a nudge after the estimate goes out
 - Review management beyond the link in the job-complete template
-- Writing to the calendar or replacing a CRM
+- Writing to the calendar
+- CRM screens. v1 stores contacts, and the screens come later (see “CRM path and rebuild requirements”)
 
 ## How it works
 
@@ -60,7 +61,7 @@ In order of preference:
 
 1. **Event guests,** excluding the contractor's own addresses and any domain on the client's ignore list.
 2. **An email address in the event description.**
-3. **Booking-form records** (phase 2): when the new site's form creates an appointment, its stored email wins over both of the above.
+3. **A matched contact from the website form:** when an event's guest email or a phone number in its description matches a `contacts` record, that contact's email and first name win over both of the above. See “CRM path and rebuild requirements.”
 
 v1 sends to one recipient. If several qualify, it uses the first guest and lists the others in the log.
 
@@ -112,8 +113,11 @@ SQLite, one file:
 - `clients`: business details, settings, time zone, sender and reply-to addresses, pause flag
 - `google_connections`: client, calendar ID, encrypted refresh token, last poll time
 - `templates`: client, appointment type, subject, body
-- `appointments`: client, event ID, title, type, recipient, first name, end time, send time, status (`scheduled`, `sent`, `skipped`, `failed`), reason
+- `contacts`: client, first name, last name, email, phone, property address (street, city, state, ZIP), source (website form, phone, other), insurance claim (yes, no, not sure), created time. Insurance carrier and claim number are added later by the contractor, never asked on the public form. See “CRM path and rebuild requirements.”
+- `appointments`: client, contact (when matched), event ID, title, type, recipient, first name, end time, send time, status (`scheduled`, `sent`, `skipped`, `failed`), reason
 - `sends`: appointment, Resend message ID, rendered subject and body, sent time
+
+v1 creates `contacts` rows even before the CRM screens exist, so every web lead and every follow-up is on record from the first day.
 
 ## Deployment
 
@@ -139,6 +143,51 @@ SQLite, one file:
 
 Practical, not a subscription business: include setup in Dusty's site rebuild, then charge a small monthly upkeep fee. Later clients pay a setup fee plus the same upkeep. Numbers to be decided.
 
+## CRM path and rebuild requirements
+
+Thryv gave Dusty more than the follow-up email: a contact list, appointment history and a place to track jobs. The follow-up app already has to know who the homeowner is, what the appointment was and when it happened, so it can grow into a lightweight CRM without starting over. Sandhill's site rebuild is the time to lay the groundwork.
+
+### Where it grows
+
+| Stage | Adds | Depends on |
+|---|---|---|
+| v1 | Follow-up emails, plus a `contacts` record for every web lead and every appointment recipient | Google Calendar, Resend |
+| CRM 1 | Contact pages showing details, appointment history, every email sent and free-text notes. Insurance carrier and claim number fields. | The website form posting into the app |
+| CRM 2 | A short pipeline: new lead, inspected, estimate sent, won, lost. Stages move automatically where the app can tell (an `Inspection` appointment ends, so the lead moves to inspected) and by hand otherwise. | CRM 1 in daily use |
+| Later, maybe | “Estimate sent” and “no decision yet” nudges. Possibly driven by quotes in Invoice Ninja, which already handles clients, quotes and invoices on the VPS. | Checking Invoice Ninja's API and webhooks, and whether Sandhill should live in Infusionmedia's Invoice Ninja at all |
+
+Each stage ships only after the one before it is in regular use. Invoicing, payments, review management and a client portal are out of scope. Those are what turn a lightweight CRM into a Thryv replacement, and that's a much bigger commitment to support.
+
+### Website form
+
+Roofing jobs run through insurance adjusters, inspectors, permits and HOAs, so the contractor needs full contact details from the first touch.
+
+Required fields:
+
+- First name and last name, as separate fields
+- Email
+- Phone
+- Property address as separate street, city, state and ZIP fields. That's the house with the roof, which can differ from the contact's mailing address.
+- Service needed: inspection, repair, replacement, storm or insurance damage, or other
+
+Optional fields:
+
+- Is this an insurance claim? (Yes, no, not sure)
+- Anything else we should know? (free text)
+
+Leave insurance carrier, claim number and policy details off the public form. They make the form longer and scarier, and the contractor collects them once the job is real.
+
+Keep every field separate and labeled. Free-text blobs like “Name and address” can't be matched to calendar events or searched later.
+
+### Rebuild checklist
+
+- **The form posts to the follow-up app** (and still notifies Dusty), so every web lead lands in `contacts` from launch day, even before the CRM screens exist.
+- **Decide self-scheduling or callback.** Most roofers call the homeowner back to set a time. Either way, the app links the form submission to the calendar event Dusty creates by matching email or phone. If he books by phone without the email, he adds it to the event.
+- **Set up Dusty's email on his own domain**, and add Resend's DNS records so the follow-ups send from it.
+- **Add consent text by the submit button:** something like “We'll email you about your appointment.” Keep it accurate to what the app sends.
+- **Update the privacy policy** to cover collecting contact and property details and sending appointment emails through a third-party service.
+- **Add spam protection** (a honeypot field or a light CAPTCHA), so junk submissions don't become contacts or trigger emails.
+
 ## Open questions
 
 For Dusty:
@@ -151,12 +200,12 @@ For Dusty:
 
 For Infusionmedia:
 
-- Does the new Sandhill site get a booking form in the rebuild? If so, phase 2 has it create the appointment with the homeowner's email attached, which needs calendar write access.
+- Does the new Sandhill site offer self-scheduling, or a request form followed by a callback? The form requirements above work either way. Only self-scheduling, where the app creates calendar events itself, needs calendar write access.
 - Who watches the dashboard's failed and unrecognized lists, and how often?
 
 ## Phase 2 candidates
 
-- Booking-form integration from the new site
+- Self-scheduling on the new site, where the app creates calendar events (needs calendar write access)
 - A nudge a few days after the estimate goes out, and a check-in if there's no decision
 - A daily digest emailed to the contractor listing what was sent
 - A text-message option
