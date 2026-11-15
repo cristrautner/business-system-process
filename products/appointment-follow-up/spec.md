@@ -197,6 +197,25 @@ Keep every field separate and labeled. Free-text blobs like â€œName and addressâ
 - **Update the privacy policy** to cover collecting contact and property details and sending appointment emails through a third-party service.
 - **Add spam protection** (a honeypot field or a light CAPTCHA), so junk submissions don't become contacts or trigger emails.
 
+## Build or buy: GoHighLevel
+
+**Decision (2026-11-15): we build our own. GoHighLevel isn't for us.** Infusionmedia doesn't have the cash flow to cover a roughly $500-a-month base fee before the first client pays anything. The app on the VPS costs close to nothing per client and pays for itself from Dusty onward.
+
+GoHighLevel came up because it's a white-label CRM that agencies resell to clients, which makes it the obvious ready-made route to a Thryv-style suite. What we found (from third-party pricing guides and HighLevel help-center articles, not HighLevel's own pricing page):
+
+- **Three plans** at roughly $97, $297 and $497 a month. Only the top plan (Agency Pro, also called SaaS Pro) includes SaaS Mode, which is what allows reselling under our own brand.
+- **SaaS Mode plans are modular by tier.** Each plan has its own price and feature toggles, individual clients can have features switched on or off outside their plan, and email, text and phone usage can be passed through with a markup. Pricing follows the plan, so it's a few designed tiers, not true pay-per-module.
+- **It speaks directly to why Dusty left Thryv.** He left over cost, and that cost included features he didn't use. GoHighLevel would let us control both, which is the one strong argument for it.
+
+| | GoHighLevel | Our own app on the VPS |
+|---|---|---|
+| Speed | CRM, calendars, forms, pipelines, email, texting, reviews and invoices exist today. The two-hour follow-up should be a native workflow. | Every piece gets built and supported by us |
+| Our cost | Roughly $497 a month before reselling, with one client or twenty | Close to zero per client beyond the VPS and Resend |
+| Break-even | Needs several paying clients to cover the base fee | From the first client |
+| Control | HighLevel's roadmap and pricing, alongside many agencies reselling the same thing | Fully ours, and as narrow as we want |
+
+Dusty's reason for leaving Thryv also works as this product's principle: contractors pay only for the parts they use. That holds whether we build it or someday buy it.
+
 ## Open questions
 
 For Dusty:
