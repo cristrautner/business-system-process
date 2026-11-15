@@ -1,0 +1,12 @@
+services:
+  followup:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    # Only reachable from the VPS itself. The reverse proxy in front of Invoice Ninja forwards
+    # the follow-up subdomain here. If that proxy runs in Docker, put this service on its
+    # network instead and drop the ports line (see README).
+    ports:
+      - "127.0.0.1:3010:3000"
