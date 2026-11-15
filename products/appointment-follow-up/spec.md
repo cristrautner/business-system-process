@@ -156,7 +156,16 @@ Thryv gave Dusty more than the follow-up email: a contact list, appointment hist
 | CRM 2 | A short pipeline: new lead, inspected, estimate sent, won, lost. Stages move automatically where the app can tell (an `Inspection` appointment ends, so the lead moves to inspected) and by hand otherwise. | CRM 1 in daily use |
 | Later, maybe | “Estimate sent” and “no decision yet” nudges. Possibly driven by quotes in Invoice Ninja, which already handles clients, quotes and invoices on the VPS. | Checking Invoice Ninja's API and webhooks, and whether Sandhill should live in Infusionmedia's Invoice Ninja at all |
 
-Each stage ships only after the one before it is in regular use. Invoicing, payments, review management and a client portal are out of scope. Those are what turn a lightweight CRM into a Thryv replacement, and that's a much bigger commitment to support.
+Each stage ships only after the one before it is in regular use.
+
+### The longer view
+
+A Thryv-style suite for contractors (invoicing, payments, review management, a client portal) is a possible long-term direction, not ruled out. It's deferred until the stages above prove themselves with Dusty and a few more clients, because each of those pieces is a much bigger commitment to build and support than the follow-up email. To keep that door open without paying for it yet:
+
+- Stay multi-client from the first line of code. Every record belongs to a client.
+- Treat the contact as the central record, with appointments, emails, notes and later jobs and invoices all hanging off it.
+- Keep the pieces separate (calendar sync, sending, contacts, pipeline), so each can be replaced or extended on its own.
+- Give the app a small internal API from the start. The website form already needs one, and future pieces can use it too.
 
 ### Website form
 
