@@ -70,8 +70,6 @@ export function defaultSettings(name: string): ClientSettings {
     ownEmails: [],
     ignoreDomains: [],
     installRequiresFinal: true,
-    // New clients start in shadow mode with nothing set, which means nothing sends
-    // until an address is configured. See readinessProblems().
     shadowEmail: "",
     bccEmail: "",
     leadNotifyEmail: "",
