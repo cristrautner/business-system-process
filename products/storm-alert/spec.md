@@ -21,7 +21,7 @@ There's a real competitor, so the pitch has to be specific.
 | Interactive Hail Maps | Real-time hail alerts and storm tracking, mostly for canvassing | Not found |
 | AccuLynx, JobNimbus and similar | Full roofing CRMs, some with hail map integrations | Hundreds a month |
 
-These tools tell the roofer who got hit. The micro-behavior is *contacting* them, and that step is still manual: export the list, write an email, mail-merge it, hope it doesn't land in spam. Storm alert closes that loop. It sends the note from the roofer's own name, to his own customers, the morning after. It skips canvassing maps, door-knocking routes and new-lead prospecting, which is where the competitors spend their effort.
+These tools tell the roofer who got hit. The micro-behavior is *contacting* them, and that step is still manual: export the list, write an email, mail-merge it, hope it doesn't land in spam. Storm alert closes that loop. It sends the note from the roofer's own name, to his own customers, the morning after. v1 skips canvassing maps, door-knocking routes and new-lead prospecting, which is where the competitors spend their effort. Neighborhood mail comes later as a separate product (see “Channels”).
 
 ## What v1 does
 
@@ -33,8 +33,11 @@ v1 asks before sending. The appointment follow-up sends by default because one w
 
 - Wind damage. Radar-based wind estimates are much weaker than hail estimates, and wind reports are sparse.
 - Text messages (A2P 10DLC registration, same reason as the appointment app)
+- Postcards to past customers. These come next, in v1.1 (see “Channels”).
+- Postcards to whole neighborhoods. Phase 2, possibly with Andy (see “Channels”).
+- Cold email to neighborhoods. Not planned (see “Channels”).
 - Leads who never became customers. A setting for open estimates may come later.
-- Canvassing maps or prospecting addresses that aren't already customers
+- Canvassing maps
 - Self-serve signup and billing. The first strangers are onboarded by hand (see “Standalone version”).
 
 ## Where the hail data comes from
@@ -126,6 +129,49 @@ The appointment follow-up is a transactional message about a job the homeowner b
 
 CAN-SPAM also expects commercial email to say clearly that it's an advertisement, unless the recipient gave affirmative consent. The website form's consent line should cover storm alerts (“We'll email you about your appointment and occasional storm alerts”). For older customers imported from a list, check with whoever handles Infusionmedia's legal questions whether the past business relationship plus a clear unsubscribe is enough, or whether the footer needs an ad disclosure.
 
+## Channels
+
+Andy (a developer Infusionmedia works with, maker of SuccessHD, with a background in neighborhood-level targeting for political campaign mail) has pitched this idea before in three forms: postcards or email alerts to existing customers, and cold email alerts to whole neighborhoods. Here's how those fit, from easiest to hardest.
+
+| Channel | Who | Speed after the storm | Cost per piece | Status |
+|---|---|---|---|---|
+| Email | Past customers with an email on file | Next morning | Close to zero (Resend) | v1 |
+| Addressed postcard | Past customers, including those with no email | About 4–7 days (print plus First Class delivery) | Roughly $0.62–$0.91 for a 4×6 First Class postcard through Lob, print and postage included, depending on plan tier | v1.1 |
+| Neighborhood postcard | Every home in the hail swath, customer or not | 1–2 weeks (print, then a drop at the post office or a mail house) | USPS Every Door Direct Mail (EDDM) retail postage is $0.260 a piece as of 2026-07-12 per vendor guides citing USPS Notice 123, plus printing. Full-service quotes run about $0.50–$1.00 a piece. | Phase 2, a separate product, possibly with Andy |
+| Cold email | Every home in the swath | Next morning, in theory | Purchased email data | Not planned |
+
+Mail prices come from vendor and third-party pages that disagree, so check Lob's and USPS's live rates before pricing anything.
+
+### Postcards to past customers (v1.1)
+
+This is the easy one, as Andy said. The addresses are already in the app, mail doesn't fall under CAN-SPAM, there's no unsubscribe or deliverability to manage, and it reaches older customers who never gave an email address. It's slower than email but it lasts. A card on the fridge a week after the storm, following the email, is a good second touch.
+
+- The review screen gets a second checkbox: “Also mail a postcard.” Customers with no email get the postcard only.
+- Sent through a print-and-mail API (Lob or PostGrid) using one front design per client and a short back message built from the same copy rules as the email.
+- Mail is a real per-storm cost (43 customers at about $0.75 is roughly $32), so it's billed to the contractor as a pass-through with a markup, and the review screen shows the total before he approves.
+- Data: `storm_hits` gets a `channel` column (`email`, `postcard`), and each mailed piece stores the provider's ID and tracking status.
+
+### Neighborhood postcards (phase 2)
+
+This is a different behavior, and Kieran's method says to keep them apart. Contacting past customers is retention: cheap, warm and fast. Mailing a whole swath is lead generation from strangers, with a budget in the thousands. A swath covering ten carrier routes could be 5,000 pieces, or $2,500–$5,000 at full-service rates. It's still worth building, and it's exactly Andy's expertise.
+
+- The trigger is the same daily MESH check. The app already has the swath, because it's just the grid cells above the threshold. Phase 2 turns those cells into a polygon and picks the USPS carrier routes that fall inside it.
+- EDDM needs no names or address list. It goes to every address on each chosen route, with a 200-piece minimum, and retail drops are capped at 5,000 pieces per ZIP code per day.
+- The contractor approves a budget, not a list.
+- The copy rules above apply, and they matter more here: mail to strangers after a storm is what regulators picture when they write storm-chaser laws. Check the contractor's state rules for post-storm solicitation before the first drop.
+
+The natural split is that storm alert supplies the trigger and the swath, and Andy's system handles route selection, print and mail. That depends on what SuccessHD actually does (see open questions).
+
+### Cold email to neighborhoods (not planned)
+
+Not planned, for three reasons:
+
+- There's no list. It would mean buying emails appended to the swath's street addresses from a data broker.
+- Resend's acceptable use policy prohibits unsolicited messages, including cold outreach and purchased or scraped lists. Other reputable sending services take the same position, and breaking it gets the account suspended. That account also carries every client's appointment follow-ups.
+- Cold blasts would burn the contractor's own domain, which his appointment and storm emails depend on.
+
+CAN-SPAM doesn't ban cold commercial email outright, but it's the sending services and inbox providers that make this unworkable. If neighborhoods are the goal, postcards do it legally and reliably.
+
 ## Fit with the appointment follow-up app
 
 Storm alert is a module in the same codebase and the same container, switched on per client. That's what lets one build serve Dusty as an add-on and strangers as a standalone product.
@@ -203,7 +249,8 @@ For Dusty:
 
 For Cris:
 
-- Andy has mentioned this idea and may be building his own. If he's a roofer, he's a natural first outside user or a sign the market wants it. If he's a developer or another agency, it's worth knowing what he's building before pricing the standalone. Which is he?
+- What does SuccessHD do today: targeting only, or print and mail fulfillment too? Does it already work with carrier routes or EDDM?
+- Is Andy a partner on phase 2 (he does neighborhood mail, we supply the trigger and swath), or is he building his own storm product? Talk to him before pricing the standalone version, since a competing product changes the plan.
 - Is a shared sending domain acceptable for standalone customers, or should every customer verify their own domain?
 - Who answers the CAN-SPAM consent question for imported past customers?
 
@@ -219,3 +266,8 @@ For Cris:
 - [Colorado C.R.S. 6-22-105, deductible waivers](https://colorado.public.law/statutes/crs_6-22-105)
 - [Texas deductible-waiver ban, Insurance Journal](https://www.insurancejournal.com/news/southcentral/2019/10/30/547048.htm)
 - [Oklahoma deductible-waiver ban, Roofing Contractor](https://www.roofingcontractor.com/articles/97659-new-oklahoma-law-restricts-roofing-contractors-from-waiving-deductibles)
+- [Lob pricing details](https://help.lob.com/print-and-mail/ready-to-get-started/pricing-details)
+- [PostGrid print and mail pricing](https://www.postgrid.com/pricing-print-mail/)
+- [EDDM pricing in 2026, 4over4](https://v2.4over4.com/guide/eddm-pricing-explained)
+- [EDDM postage rates, MailPro](https://www.mailpro.org/post/eddm-postage-rates/)
+- [Resend acceptable use policy](https://resend.com/legal/acceptable-use)
