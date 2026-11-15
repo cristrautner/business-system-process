@@ -39,7 +39,7 @@ Niche-specific rules:
 1. A contractor who means to email the homeowner after an appointment, but is in the truck heading to the next one. *(Appointment follow-up, built)*
 2. A roofer who means to ask for a Google review when the final invoice is paid, but is on the next roof by then. Trigger: invoice paid (QuickBooks, Xero, Stripe) or the “Install final” calendar event. *(Review ask when the job's paid)*
 3. A contractor who means to check in a week after an estimate goes out, but worries about seeming pushy and then forgets. Trigger: “Estimate” calendar event plus N days, skipped if the homeowner already replied. Already listed as “not in v1” in the appointment spec. *(Estimate check-in)*
-4. A roofer who means to contact past customers after hail hits their ZIP code, but doesn't have the list handy when it matters. Trigger: a hail report from the NWS Storm Prediction Center matched to customer ZIPs in `contacts`. *(Storm alert to past customers)*
+4. A roofer who means to contact past customers after hail hits their neighborhood, but doesn't have the list handy when it matters. Trigger: NOAA's radar hail estimate (MRMS MESH) at each customer's address, checked each morning. Spec in `storm-alert/spec.md`. *(Storm alert to past customers)*
 5. An owner who means to get before-and-after photos of every job for marketing, but the crew forgets. Trigger: install event ends, so text the crew lead “send three photos,” which go into a shared folder. These photos feed Infusionmedia's own content work for the client. *(Crew photo request)*
 6. A contractor who means to offer a free one-year inspection, but has no record of who's due. Trigger: install date plus 11 months. *(One-year warranty check-in)*
 7. A roofer who means to ask the homeowner whether the insurance check arrived, but loses track between the adjuster meeting and the payment. Trigger: adjuster event plus 14 days. *(Insurance check nudge)*
@@ -87,7 +87,7 @@ Picked for filter fit, how much of the appointment app they reuse (calendar poll
 | 1 | Appointment follow-up | Contractors | Calendar event ends | Built | Both | Proving it beats Thryv's version |
 | 2 | Review ask | Contractors, then agents | Invoice paid or final event | High | Standalone first | Many competitors (Podium, Birdeye, NiceJob), so price and simplicity have to be the pitch |
 | 3 | Estimate check-in | Contractors | Estimate event plus N days | High | Both | Needs reply detection so it doesn't nudge after a yes |
-| 4 | Storm alert | Roofers | NWS hail report by ZIP | Medium | Both | Storm data accuracy; must stay with past customers, not cold storm-chasing |
+| 4 | Storm alert (spec'd) | Roofers | Radar hail estimate at each customer's address | Medium | Both | HailWATCH already sells past-customer hit lists; we win by sending the note, not just listing names |
 | 5 | Crew photo request | Contractors | Install event ends | Medium (needs SMS or a crew email) | Add-on | Crews ignoring it |
 | 6 | Home anniversary | Agents | Closing date | High | Standalone | CRMs like Follow Up Boss already do this; the pitch is for agents without one |
 | 7 | Open house same-night | Agents | Sign-in form | Medium | Standalone | Seasonal; depends on the agent using our form |
