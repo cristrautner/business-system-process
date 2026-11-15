@@ -26,6 +26,7 @@ import {
 import type { Client, Store } from "../store.ts";
 import { render, TEMPLATE_LABELS, unknownNames, VARIABLES } from "../templates.ts";
 import { page, publicPage, when, type Html } from "./html.ts";
+import { registerStormRoutes, STORM_PUBLIC_PREFIXES, stormSection } from "./storm.ts";
 
 export interface WebDeps {
   store: Store;
@@ -39,7 +40,7 @@ export interface WebDeps {
   log: (message: string) => void;
 }
 
-const PUBLIC_PREFIXES = ["/healthz", "/connect/", "/oauth/", "/api/"];
+const PUBLIC_PREFIXES = ["/healthz", "/connect/", "/oauth/", "/api/", ...STORM_PUBLIC_PREFIXES];
 const STATE_MAX_AGE_MS = 30 * 60 * 1000;
 
 export function createApp(deps: WebDeps): Hono {
@@ -309,6 +310,18 @@ export function createApp(deps: WebDeps): Hono {
         <td>${contact.email ?? ""}<br /><span class="muted">${contact.phone ?? ""}</span></td>
         <td>${contact.street ?? ""}<br /><span class="muted">${[contact.city, contact.state, contact.zip].filter(Boolean).join(", ")}</span></td>
         <td>${contact.service ?? ""}${contact.insuranceClaim ? html`<br /><span class="muted">Insurance: ${contact.insuranceClaim}</span>` : ""}</td>
+        <td>
+          ${contact.isCustomer ? html`Customer${contact.jobDate ? html`<br /><span class="muted">Job ${contact.jobDate}</span>` : ""}` : html`<span class="muted">Lead</span>`}
+          <form method="post" action="/contacts/${contact.id}/customer">
+            <input type="hidden" name="customer" value="${contact.isCustomer ? "0" : "1"}" />
+            <button class="quiet">${contact.isCustomer ? "Mark as lead" : "Mark as customer"}</button>
+          </form>
+        </td>
+        <td>${contact.geocodeStatus === "matched"
+          ? html`<span class="ok">Located</span>`
+          : contact.geocodeStatus
+            ? html`<span class="warn">Not found</span>`
+            : html`<span class="muted">Waiting</span>`}${contact.stormOptOut ? html`<br /><span class="muted">Unsubscribed</span>` : ""}</td>
         <td class="muted">${when(contact.createdAt, client.settings.timezone)}</td>
       </tr>`,
     );
@@ -318,8 +331,8 @@ export function createApp(deps: WebDeps): Hono {
         html`<p><a href="/clients/${client.id}">Back to ${client.name}</a></p>
           <section>
             <table>
-              <tr><th>Name</th><th>Contact</th><th>Property</th><th>Service</th><th>Added</th></tr>
-              ${rows.length ? rows : html`<tr><td colspan="5" class="muted">No contacts yet. They arrive from the website form.</td></tr>`}
+              <tr><th>Name</th><th>Contact</th><th>Property</th><th>Service</th><th>Storm alerts</th><th>Map</th><th>Added</th></tr>
+              ${rows.length ? rows : html`<tr><td colspan="7" class="muted">No contacts yet. They arrive from the website form, or <a href="/clients/${client.id}/import">import past customers</a>.</td></tr>`}
             </table>
           </section>`,
       ),
@@ -361,6 +374,7 @@ export function createApp(deps: WebDeps): Hono {
     return c.redirect(`/clients/${client.id}/templates/${type}?msg=Back+to+the+default+template.`, 303);
   });
 
+  registerStormRoutes(app, deps);
   return app;
 }
 
@@ -500,6 +514,8 @@ function clientPage(deps: WebDeps, client: Client): Html {
       <form class="inline" method="post" action="/clients/${client.id}/rotate-lead-key"><button class="quiet">New key</button></form>
     </section>
 
+    ${stormSection(deps, client)}
+
     <section id="settings">
       <h2>Settings</h2>
       ${settingsForm(client)}
@@ -561,6 +577,22 @@ function settingsForm(client: Client): Html {
         ${text("allowedOrigin", "Client website origin", "Like https://sandhillroofing.com. Lets that site post leads from the browser.", "url")}
       </div>
     </div>
+    <h2 style="margin-top:20px">Storm alerts</h2>
+    <div class="grid">
+      <div>
+        ${check("stormEnabled", "Check customers' addresses for hail every morning")}
+        ${text("stormThresholdInches", "Hail size that counts (inches)", "Radar estimate at or above this. 1 is about quarter size.")}
+        ${text("stormSendStart", "Send storm emails from", "24-hour local time, like 09:00.")}
+        ${text("stormSendEnd", "Until", "Like 18:00. Approvals after this wait for the next morning.")}
+      </div>
+      <div>
+        ${text("stormNotifyEmail", "Morning summary goes to", "The contractor. Leave empty to use the reply-to address.", "email")}
+        ${text("businessAddress", "Business postal address", "Printed in every storm email's footer. Required by CAN-SPAM.")}
+        ${check("postcardsEnabled", "Offer postcards through Smartpress")}
+        ${text("postcardOrderEmail", "Postcard orders go to", "Whoever places the Smartpress order.", "email")}
+        ${text("postcardCost", "Cost per postcard ($)", "Shown to the contractor before he approves.")}
+      </div>
+    </div>
     <p><button>Save settings</button></p>
   </form>`;
 }
@@ -590,6 +622,17 @@ export function readSettingsForm(body: Record<string, unknown>, current: ClientS
     if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) errors.push(`${label} doesn't look like an email address.`);
     return value;
   };
+  const decimal = (name: string, label: string, min: number, max: number) => {
+    const value = Number(str(name));
+    if (!str(name) || !Number.isFinite(value) || value < min || value > max) {
+      errors.push(`${label} must be a number from ${min} to ${max}.`);
+      return current[name as keyof ClientSettings] as number;
+    }
+    return value;
+  };
+  // Storm fields keep their current values when a form doesn't include them.
+  const has = (name: string) => body[name] !== undefined;
+  const stormForm = has("stormSendStart");
 
   const { keywords, errors: keywordErrors } = parseKeywordLines(str("keywords"));
   errors.push(...keywordErrors);
@@ -622,7 +665,17 @@ export function readSettingsForm(body: Record<string, unknown>, current: ClientS
     bccEmail: email("bccEmail", "BCC address"),
     leadNotifyEmail: email("leadNotifyEmail", "Lead notification address"),
     allowedOrigin,
+    stormEnabled: stormForm ? body.stormEnabled === "on" : current.stormEnabled,
+    stormThresholdInches: stormForm ? decimal("stormThresholdInches", "Storm hail size", 0.5, 4) : current.stormThresholdInches,
+    stormSendStart: stormForm ? time("stormSendStart", "Storm send start") : current.stormSendStart,
+    stormSendEnd: stormForm ? time("stormSendEnd", "Storm send end") : current.stormSendEnd,
+    stormNotifyEmail: stormForm ? email("stormNotifyEmail", "Storm summary address") : current.stormNotifyEmail,
+    businessAddress: stormForm ? str("businessAddress") : current.businessAddress,
+    postcardsEnabled: stormForm ? body.postcardsEnabled === "on" : current.postcardsEnabled,
+    postcardOrderEmail: stormForm ? email("postcardOrderEmail", "Postcard order address") : current.postcardOrderEmail,
+    postcardCost: stormForm ? decimal("postcardCost", "Postcard cost", 0, 10) : current.postcardCost,
   };
+  if (settings.stormSendStart >= settings.stormSendEnd) errors.push("Storm emails need a send window that starts before it ends.");
   return { settings, errors };
 }
 
@@ -637,7 +690,16 @@ function templatePage(deps: WebDeps, client: Client, type: TemplateType): Html {
     review_link: client.settings.reviewLink,
     warranty_note: client.settings.warrantyNote,
     estimate_photos: client.settings.estimatePhotos,
+    street: "1418 Mesquite Ln",
+    storm_day: "Tuesday",
+    storm_date: "Tuesday, May 12",
   });
+  const stormNote =
+    type === "storm_email"
+      ? html`<p class="help">The app adds a footer to every storm email with ${client.settings.businessAddress || "the business postal address"} and an unsubscribe link. It can't be edited out. Keep to the copy rules: no deductibles, no insurance promises, no public-adjuster claims, no urgency, and no hail size.</p>`
+      : type === "storm_postcard"
+        ? html`<p class="help">The subject is the postcard headline. Every card in a Smartpress batch uses this wording, rendered into the mailing list's Message column. Keep it short enough for the back of a 4×6 card, and keep to the storm email's copy rules.</p>`
+        : "";
   return html`<p><a href="/clients/${client.id}">Back to ${client.name}</a></p>
     <section>
       <form method="post" action="/clients/${client.id}/templates/${type}">
@@ -649,6 +711,7 @@ function templatePage(deps: WebDeps, client: Client, type: TemplateType): Html {
           Variables: ${VARIABLES.map((v) => `{{${v}}}`).join(", ")}. Wrap a sentence in [[name: ...]] to include it only when that
           variable or the estimate_photos setting is set. Write plain text, and avoid “today,” since quiet hours can move a send to the next morning.
         </p>
+        ${stormNote}
         <p><button>Save template</button></p>
       </form>
       ${template.custom
