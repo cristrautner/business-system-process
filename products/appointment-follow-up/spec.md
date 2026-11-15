@@ -65,7 +65,7 @@ In order of preference:
 
 v1 sends to one recipient. If several qualify, it uses the first guest and lists the others in the log.
 
-The first name comes from the guest's display name, a “Name:” line in the description, or the word after the keyword in the title (as in “Inspection Smith”). If none is found, the greeting falls back to “Hi there.”
+The first name comes from a matched contact, the guest's display name, or a “Name:” line in the description. If none is found, the greeting falls back to “Hi there.” The title is never used for the name: in “Inspection Smith,” the word after the keyword is usually a last name, and “Hi Smith” reads worse than “Hi there.”
 
 ### Don't send when
 
@@ -125,7 +125,7 @@ v1 creates `contacts` rows even before the CRM screens exist, so every web lead 
 - The scheduler runs inside the container. Nothing depends on platform cron limits.
 - Secrets (the Google OAuth client, the Resend API key, the token-encryption key) live in an env file outside the repo.
 - A nightly off-server backup of the SQLite file. Losing it means every client has to reconnect Google.
-- Recommended stack: Node and TypeScript in a single process, with SQLite. Any stack with a reliable in-process scheduler works.
+- Built with Node 22 and TypeScript in a single process, using Node's built-in SQLite. The code, setup steps and deployment guide are in `app/` (see `app/README.md`).
 
 ## Google access
 
