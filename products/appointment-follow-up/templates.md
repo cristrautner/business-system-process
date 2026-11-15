@@ -28,11 +28,11 @@ These apply to any edit, for Dusty or for later clients.
 
 ## Variables
 
-Settings are per client. Appointment values come from the calendar event or the booking form.
+Settings are per client. Appointment values come from the calendar event or a matched website-form contact.
 
 | Variable | Source | Example |
 |---|---|---|
-| `{{first_name}}` | Homeowner's first name from the booking form, the guest name on the event, or the event title. If none is found, the greeting becomes “Hi there,” | Linda |
+| `{{first_name}}` | Homeowner's first name from a matched website-form contact, the guest name on the event, or the event title. If none is found, the greeting becomes “Hi there,” | Linda |
 | `{{sender_name}}` | Client setting | Dusty |
 | `{{business_name}}` | Client setting | Sandhill Roofing |
 | `{{phone}}` | Client setting, the number homeowners should call or text | (555) 010-0199 |
