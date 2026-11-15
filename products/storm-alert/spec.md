@@ -4,6 +4,8 @@ The morning after hail, a roofer gets one email: “Hail hit 43 of your past cus
 
 Drafted 2026-11-15. Comes from `../micro-behaviors.md` (#4 in the first ten).
 
+**Status (2026-11-15):** v1 is built into the appointment follow-up app, including postcards through Smartpress. Setup and operating notes are in `../appointment-follow-up/app/README.md` under “Storm alerts.” Where the build differs from the first draft of this spec, the sections below have been updated.
+
 ## The behavior
 
 A roofer who means to contact past customers after hail hits their neighborhood, but doesn't have the list handy when it matters, and by the time he thinks of it the storm chasers have knocked on every door.
@@ -25,7 +27,7 @@ These tools tell the roofer who got hit. The micro-behavior is *contacting* them
 
 ## What v1 does
 
-Every morning the app checks overnight radar hail estimates against the address of every past customer. If any were hit at or above the client's threshold, it emails the contractor a summary. He reviews the list in the dashboard and presses Send, or removes anyone first. Each homeowner gets one plain-text email from the contractor, with replies going to his inbox.
+Every morning the app checks overnight radar hail estimates against the address of every past customer. If any were hit at or above the client's threshold, it emails the contractor a summary with a review link. He opens it on his phone, removes anyone he wants, and presses Send. The link works without a login, because the dashboard is agency-only, and it expires with the storm day. Each homeowner gets one plain-text email from the contractor, with replies going to his inbox. If postcards are on, the same screen offers a postcard for each customer.
 
 v1 asks before sending. The appointment follow-up sends by default because one wrong email costs little. A storm alert goes to dozens of homeowners at once, and the radar estimate can be wrong. One bad batch would teach the contractor to distrust it. Auto-send becomes a setting after a season of clean runs.
 
@@ -33,7 +35,6 @@ v1 asks before sending. The appointment follow-up sends by default because one w
 
 - Wind damage. Radar-based wind estimates are much weaker than hail estimates, and wind reports are sparse.
 - Text messages (A2P 10DLC registration, same reason as the appointment app)
-- Postcards to past customers. These come next, in v1.1 (see “Channels”).
 - Postcards to whole neighborhoods. Phase 2, possibly with Andy (see “Channels”).
 - Cold email to neighborhoods. Not planned (see “Channels”).
 - Leads who never became customers. A setting for open estimates may come later.
@@ -136,20 +137,26 @@ Andy (a developer Infusionmedia works with, maker of SuccessHD, with a backgroun
 | Channel | Who | Speed after the storm | Cost per piece | Status |
 |---|---|---|---|---|
 | Email | Past customers with an email on file | Next morning | Close to zero (Resend) | v1 |
-| Addressed postcard | Past customers, including those with no email | About 4–7 days (print plus First Class delivery) | Roughly $0.62–$0.91 for a 4×6 First Class postcard through Lob, print and postage included, depending on plan tier | v1.1 |
+| Addressed postcard | Past customers, including those with no email | About a week (proof, print and mailing through Smartpress) | Smartpress pricing to be confirmed. API printers like Lob list roughly $0.62–$0.91 for a 4×6 First Class card, print and postage included, which is a useful ceiling. | v1, through Smartpress |
 | Neighborhood postcard | Every home in the hail swath, customer or not | 1–2 weeks (print, then a drop at the post office or a mail house) | USPS Every Door Direct Mail (EDDM) retail postage is $0.260 a piece as of 2026-07-12 per vendor guides citing USPS Notice 123, plus printing. Full-service quotes run about $0.50–$1.00 a piece. | Phase 2, a separate product, possibly with Andy |
 | Cold email | Every home in the swath | Next morning, in theory | Purchased email data | Not planned |
 
-Mail prices come from vendor and third-party pages that disagree, so check Lob's and USPS's live rates before pricing anything.
+Mail prices come from vendor and third-party pages that disagree, so check Smartpress's and USPS's live rates before pricing anything. The app's cost-per-card setting (default $0.85) is a placeholder until then.
 
-### Postcards to past customers (v1.1)
+### Postcards to past customers (v1, through Smartpress)
 
 This is the easy one, as Andy said. The addresses are already in the app, mail doesn't fall under CAN-SPAM, there's no unsubscribe or deliverability to manage, and it reaches older customers who never gave an email address. It's slower than email but it lasts. A card on the fridge a week after the storm, following the email, is a good second touch.
 
-- The review screen gets a second checkbox: “Also mail a postcard.” Customers with no email get the postcard only.
-- Sent through a print-and-mail API (Lob or PostGrid) using one front design per client and a short back message built from the same copy rules as the email.
-- Mail is a real per-storm cost (43 customers at about $0.75 is roughly $32), so it's billed to the contractor as a pass-through with a markup, and the review screen shows the total before he approves.
-- Data: `storm_hits` gets a `channel` column (`email`, `postcard`), and each mailed piece stores the provider's ID and tracking status.
+Infusionmedia already prints through Smartpress, so v1 uses it rather than an API printer. Smartpress has no public API that we could find. Its direct mail workflow is to upload the art and a mailing list (CSV, each field in its own column) at checkout, after which it prints, addresses each piece from the list and mails it. So the hand-off is a file and one manual upload per storm:
+
+- The review screen has a second checkbox: “Also mail each one a postcard,” with the estimated total. Customers with no email only get something this way.
+- Approving creates a postcard batch and emails Infusionmedia (the postcard order address) a link to it.
+- The batch page downloads a Smartpress mailing list: `FirstName, LastName, Address1, City, State, Zip, Headline, Message, Street, StormDate`.
+- The wording is standardized in one editable “Storm alert postcard” template with the same placeholders as the email (`{{first_name}}`, `{{street}}`, `{{storm_date}}`, `{{phone}}` and so on). The app renders each card's whole back into `Message`, so the art needs one variable text box under the headline, and the copy rules are enforced in one place. Art that keeps its own fixed wording can merge `FirstName`, `Street` and `StormDate` instead.
+- Someone reorders the client's saved 4×6 storm postcard on Smartpress, uploads the CSV, approves the proof, and marks the batch ordered with the Smartpress order number.
+- Mail is a real per-storm cost (43 customers at about $0.85 is roughly $37), so it's billed to the contractor as a pass-through with a markup.
+
+If Smartpress turns out to have a partner API or a “reorder with a new list” shortcut, the batch page is where it would plug in.
 
 ### Neighborhood postcards (phase 2)
 
@@ -187,13 +194,16 @@ Storm alert is a module in the same codebase and the same container, switched on
 
 ### Data
 
-Added to `contacts`: `is_customer`, `job_date`, `lat`, `lon`, `geocode_quality`, `geocoded_at`.
+Added to `contacts`: `is_customer`, `job_date`, `storm_opt_out`, `lat`, `lon`, `geocode_status`, `geocode_note`, `geocoded_at`.
 
 New tables:
 
-- `storm_days`: client, storm date (the 12:00 UTC to 12:00 UTC day, matching SPC), MESH file key, largest estimate, hit count, status (`pending_review`, `approved`, `sent`, `dismissed`, `expired`), reviewed time
-- `storm_hits`: storm day, contact, MESH estimate in millimeters, nearest ground report and its distance, status (`queued`, `removed`, `sent`, `skipped`, `failed`), reason
+- `storm_runs`: one row per storm date checked, since one MESH file serves every client
+- `storm_days`: client, storm date (the 12:00 UTC to 12:00 UTC day, matching SPC), MESH file key, largest estimate, status (`pending_review`, `approved`, `dismissed`, `expired`), review token, whether postcards were ordered, reviewed and notified times
+- `storm_hits`: storm day, contact, a copy of the name and address, MESH estimate in millimeters, nearest ground report and its distance, review status (`pending`, `skipped`, `removed`, `approved`) with a reason, email status (`queued`, `sent`, `failed`) with retries, postcard batch, unsubscribe token
+- `postcard_batches`: client, storm day, piece count, status (`needs_order`, `ordered`, `cancelled`), Smartpress order number
 - `unsubscribes`: client, email, time, source
+- `storm_reports`: queued and finished replays for the past-storms report, saved as they progress
 
 `sends` currently requires an appointment. Make `appointment_id` nullable and add `storm_hit_id`, so every outgoing email stays in one history.
 
@@ -201,7 +211,7 @@ Raw MESH grids aren't stored. Only the values at customer addresses are, with th
 
 ### Decoding
 
-GRIB2 has no solid Node library. The container adds Python with the `eccodes` package from pip, which bundles its own decoder and worked on the first try in testing. A small script reads the grid and returns values for a list of coordinates as JSON, and Node calls it once per day. Decoding one file takes well under a second.
+MRMS files use PNG packing (GRIB2 template 5.41), which turned out to be simple enough to read directly. The app has a small TypeScript GRIB2 and PNG reader (`src/storm/grib2.ts`, `src/storm/png.ts`), so the container stays Node-only with no Python. It was checked cell by cell against ECMWF's eccodes on two real NOAA files and matched exactly. A full day downloads and decodes in under a second and takes about 50 MB of memory while it's held.
 
 ### Network
 
@@ -253,6 +263,12 @@ For Cris:
 - Is Andy a partner on phase 2 (he does neighborhood mail, we supply the trigger and swath), or is he building his own storm product? Talk to him before pricing the standalone version, since a competing product changes the plan.
 - Is a shared sending domain acceptable for standalone customers, or should every customer verify their own domain?
 - Who answers the CAN-SPAM consent question for imported past customers?
+
+For Smartpress:
+
+- Is there a partner API, or a way to reorder a saved postcard with a new mailing list without going through checkout each time?
+- What's the minimum quantity and price for a mailed 4×6 postcard with variable data, and the usual turnaround from upload to mail?
+- Can a variable text box take a multi-line `Message` field, or does the art need separate merge fields?
 
 ## Sources
 

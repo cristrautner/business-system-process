@@ -7,6 +7,8 @@ import { GoogleCalendar, GoogleOAuth } from "./google.ts";
 import { startScheduler } from "./jobs.ts";
 import { DryRunMailer, ResendMailer } from "./mailer.ts";
 import { Store } from "./store.ts";
+import { startStormScheduler } from "./storm/jobs.ts";
+import { CensusGeocoder, MrmsHailSource, SpcReportSource } from "./storm/sources.ts";
 import { createApp } from "./web/app.ts";
 
 const log = (message: string) => console.log(`${new Date().toISOString()} ${message}`);
@@ -44,9 +46,24 @@ const stopScheduler = startScheduler(
   config.sendIntervalSeconds,
 );
 
+const stopStorms = startStormScheduler(
+  {
+    store,
+    mailer,
+    hail: new MrmsHailSource(config.mrmsBaseUrl),
+    reports: new SpcReportSource(),
+    geocoder: new CensusGeocoder(),
+    appUrl: config.appUrl,
+    now,
+    log,
+  },
+  config.stormIntervalSeconds,
+);
+
 function shutdown(signal: string) {
   log(`${signal} received, shutting down`);
   stopScheduler();
+  stopStorms();
   server.close(() => {
     db.close();
     process.exit(0);

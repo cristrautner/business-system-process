@@ -3,7 +3,7 @@
 export const APPOINTMENT_TYPES = ["inspection", "estimate", "adjuster", "install", "repair", "general"] as const;
 export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
 
-export const TEMPLATE_TYPES = ["inspection", "estimate", "adjuster", "job_complete", "general"] as const;
+export const TEMPLATE_TYPES = ["inspection", "estimate", "adjuster", "job_complete", "general", "storm_email", "storm_postcard"] as const;
 export type TemplateType = (typeof TEMPLATE_TYPES)[number];
 
 export function templateFor(type: AppointmentType): TemplateType {
@@ -40,6 +40,23 @@ export interface ClientSettings {
   leadNotifyEmail: string;
   /** The client's website origin, allowed to post leads from the browser. */
   allowedOrigin: string;
+
+  // Storm alerts
+  stormEnabled: boolean;
+  /** Radar hail estimate, in inches, at or above which a customer counts as hit. */
+  stormThresholdInches: number;
+  /** Homeowner storm emails go out only between these local times. */
+  stormSendStart: string;
+  stormSendEnd: string;
+  /** Who gets the morning-after summary and review link. Falls back to the reply-to address. */
+  stormNotifyEmail: string;
+  /** Postal address for the footer of every storm email. CAN-SPAM requires one. */
+  businessAddress: string;
+  postcardsEnabled: boolean;
+  /** Who places the Smartpress order when a contractor asks for postcards. */
+  postcardOrderEmail: string;
+  /** Rough cost per postcard, shown to the contractor before he approves. */
+  postcardCost: number;
 }
 
 export const DEFAULT_KEYWORDS: Record<string, AppointmentType> = {
@@ -74,6 +91,15 @@ export function defaultSettings(name: string): ClientSettings {
     bccEmail: "",
     leadNotifyEmail: "",
     allowedOrigin: "",
+    stormEnabled: false,
+    stormThresholdInches: 1,
+    stormSendStart: "09:00",
+    stormSendEnd: "18:00",
+    stormNotifyEmail: "",
+    businessAddress: "",
+    postcardsEnabled: false,
+    postcardOrderEmail: "",
+    postcardCost: 0.85,
   };
 }
 
@@ -89,6 +115,15 @@ export function readinessProblems(s: ClientSettings): string[] {
   if (!s.senderName) problems.push("No sender name.");
   if (!s.phone) problems.push("No phone number for the email signature.");
   if (!isValidZone(s.timezone)) problems.push(`Unknown time zone “${s.timezone}”.`);
+  return problems;
+}
+
+/** Reasons storm alerts can't run for this client yet. Empty means ready. */
+export function stormReadinessProblems(s: ClientSettings): string[] {
+  const problems = readinessProblems(s);
+  if (!s.businessAddress) problems.push("No business postal address. Storm emails are marketing, and CAN-SPAM requires one.");
+  if (!s.stormNotifyEmail && !s.replyTo) problems.push("No address for the morning storm summary.");
+  if (s.postcardsEnabled && !s.postcardOrderEmail) problems.push("Postcards are on but nobody is set to place the Smartpress order.");
   return problems;
 }
 

@@ -18,6 +18,8 @@ export const TEMPLATE_LABELS: Record<TemplateType, string> = {
   adjuster: "Adjuster meeting",
   job_complete: "Job complete",
   general: "General appointment",
+  storm_email: "Storm alert email",
+  storm_postcard: "Storm alert postcard",
 };
 
 export const VARIABLES = [
@@ -28,6 +30,9 @@ export const VARIABLES = [
   "estimate_due",
   "review_link",
   "warranty_note",
+  "street",
+  "storm_day",
+  "storm_date",
 ] as const;
 
 export const FLAGS = ["estimate_photos"] as const;
@@ -82,6 +87,31 @@ Thanks for trusting {{business_name}} with your roof. We should be all wrapped u
 
 Thanks again,
 ${SIGNATURE}`,
+  },
+  // Storm alerts. The copy rules in products/storm-alert/spec.md apply: no deductibles, no insurance promises,
+  // no public-adjuster claims, no urgency, and no hail size (a radar estimate isn't a claim about their roof).
+  // The email footer with the postal address and unsubscribe link is added by the app and can't be edited out.
+  storm_email: {
+    subject: "Hail near your home on {{storm_day}}",
+    body: `Hi {{first_name}},
+
+Weather radar showed hail passing near {{street}} on {{storm_day}}. Hail can damage shingles without leaving anything you'd notice from the ground.
+
+If you'd like us to take a look, reply to this email or call {{phone}} and we'll set up a time. There's no charge to check.
+
+{{sender_name}}
+{{business_name}}`,
+  },
+  // Postcards: the subject is the headline. Keep the body short enough for the back of a 4×6 card.
+  storm_postcard: {
+    subject: "Hail came through your neighborhood",
+    body: `Hi {{first_name}},
+
+Weather radar showed hail passing near {{street}} on {{storm_date}}. Hail can damage shingles without leaving anything you'd notice from the ground.
+
+If you'd like us to take a look, call {{phone}}. There's no charge to check.
+
+{{sender_name}}, {{business_name}}`,
   },
   general: {
     subject: "Thanks for your time",

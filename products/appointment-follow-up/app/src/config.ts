@@ -12,6 +12,9 @@ export interface Config {
   resendApiKey: string;
   pollIntervalSeconds: number;
   sendIntervalSeconds: number;
+  stormIntervalSeconds: number;
+  /** Override for testing against a mirror. Defaults to NOAA's public bucket on AWS. */
+  mrmsBaseUrl: string;
   dryRun: boolean;
 }
 
@@ -46,6 +49,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     resendApiKey: required(env, "RESEND_API_KEY"),
     pollIntervalSeconds: number(env, "POLL_INTERVAL_SECONDS", 300),
     sendIntervalSeconds: number(env, "SEND_INTERVAL_SECONDS", 60),
+    stormIntervalSeconds: number(env, "STORM_INTERVAL_SECONDS", 600),
+    mrmsBaseUrl: env.MRMS_BASE_URL?.trim() || "https://noaa-mrms-pds.s3.amazonaws.com",
     // Defaults to on. Nothing goes to a homeowner until someone sets DRY_RUN=false on purpose.
     dryRun: (env.DRY_RUN?.trim().toLowerCase() ?? "true") !== "false",
   };

@@ -2,7 +2,9 @@
 
 Emails a contractor's customer a set time after an appointment on their Google Calendar ends, thanking them and telling them what happens next. Built for Sandhill Roofing first, multi-client from the start. The spec and email templates are one folder up, in `spec.md` and `templates.md`.
 
-**Status (2026-11-15):** v1 is built and tested against a fake calendar and a fake mailer (69 tests). It has not yet run against real Google or Resend accounts, so the first deploy should start in dry-run mode.
+**Status (2026-11-15):** v1 is built and tested against a fake calendar and a fake mailer. It has not yet run against real Google or Resend accounts, so the first deploy should start in dry-run mode.
+
+Storm alerts (spec in `../../storm-alert/spec.md`) are built into the same app and switched on per client. 108 tests cover both. The hail decoder was checked against ECMWF's eccodes on real NOAA files, and a live replay downloaded and read real NOAA data correctly. The Census geocoder and SPC ground reports were written to their published formats but couldn't be reached from the build environment, so watch the first imports and storm days in the logs.
 
 ## How it works
 
@@ -13,7 +15,7 @@ Emails a contractor's customer a set time after an appointment on their Google C
 - It sends a plain-text email through Resend from the client's own domain, with replies going to the client's inbox. Every send and skip is recorded with a reason.
 - The website form posts leads to `/api/leads`. Those contacts are matched to calendar events by email or phone.
 
-Code map: `src/rules.ts` holds the decisions (pure functions, most of the tests), `src/jobs.ts` the polling and sending, `src/store.ts` the database, `src/web/app.ts` the dashboard and public routes, `src/templates.ts` the default emails.
+Code map: `src/rules.ts` holds the decisions (pure functions, most of the tests), `src/jobs.ts` the polling and sending, `src/store.ts` the database, `src/web/app.ts` the dashboard and public routes, `src/templates.ts` the default emails. Storm alerts live in `src/storm/` (`rules.ts` decisions, `jobs.ts` background work, `grib2.ts` and `png.ts` the NOAA file reader, `sources.ts` the outside data, `store.ts` the tables) and `src/web/storm.ts`.
 
 ## Run it locally
 
@@ -124,9 +126,48 @@ Post from the client's site to `/api/leads` with the client's key (shown on the 
 
 The hidden `website` field catches bots. The `redirect` must start with the client's website origin from Settings. JSON posts get a JSON reply instead. The key only allows adding leads, and submissions are rate-limited.
 
+## Storm alerts
+
+The morning after hail, the contractor gets one email: “Hail hit 4 of your customers on Tuesday,” with a link. He opens it on his phone, unticks anyone he doesn't want to contact, and presses Send. Each homeowner gets a short plain-text note from him offering to check the roof. Nothing goes out without that press.
+
+### How it works
+
+- **Customers.** Only contacts marked as customers are checked. Import past customers as CSV from the client page (“Import customers”), or mark contacts as customers on the contacts page. Columns: `first_name, last_name, email, phone, street, city, state, zip, job_date`. Common export headers like “Address” and “Zip Code” work too.
+- **Locating.** Each customer's address is looked up once with the free US Census geocoder, about 25 every 10 minutes. Addresses it can't find are listed on the client page. Changing an address looks it up again.
+- **The morning check.** After NOAA posts the day's file (12:20 UTC), the app downloads NOAA's radar hail estimate (MRMS MESH, the 24 hours ending 12:00 UTC) from NOAA's public bucket on AWS. That's one file for every client. It reads the largest estimate within about 1 km of each customer. A customer at or above the client's threshold (default 1″) is a hit. Nearby SPC ground reports are attached as corroboration.
+- **Who's left out.** Unsubscribed customers, anyone who got a storm alert from this contractor in the last 30 days, and a second person at the same address or email.
+- **Review.** The summary email goes to the storm summary address (or reply-to). The review link works without a login, so treat it like a password. It expires after 72 hours, because week-old storm notes read as opportunistic.
+- **Sending.** Approved emails go out between the client's storm send hours (default 9:00 AM to 6:00 PM local). Every email gets a footer with the business postal address and an unsubscribe link, plus one-click unsubscribe headers. The footer can't be edited out, because storm alerts are marketing and CAN-SPAM requires both. Shadow mode, BCC and `DRY_RUN` work the same as for follow-ups.
+- **Wording.** “Storm alert email” and “Storm alert postcard” are editable templates. Placeholders: `{{first_name}}`, `{{street}}`, `{{storm_day}}` (“Tuesday”), `{{storm_date}}` (“Tuesday, May 12”, for postcards that arrive days later), `{{sender_name}}`, `{{business_name}}` and `{{phone}}`. Keep to the copy rules in the spec: no deductibles, no insurance promises, no public-adjuster claims, no urgency, and no hail size.
+
+### Postcards through Smartpress
+
+Smartpress has no public API, so the hand-off is a mailing list file:
+
+1. With postcards on in Settings, the review page offers “Also mail each one a postcard” with an estimated cost. Customers without an email only get something this way.
+2. When the contractor ticks it, the app creates a postcard batch and emails the postcard order address a link to it.
+3. The batch page has the Smartpress mailing list as CSV: `FirstName, LastName, Address1, City, State, Zip, Headline, Message, Street, StormDate`. `Message` is each card's whole back, personalized from the postcard template, so the art needs one variable text box under the headline. Art with its own fixed wording can merge `FirstName`, `Street` and `StormDate` instead.
+4. Reorder the client's storm postcard on Smartpress with variable data addressing, upload the CSV as the mailing list, approve the proof, and mark the batch ordered with the Smartpress order number.
+
+Before the first batch, set up the client's 4×6 storm postcard on Smartpress once, with the variable text box for `Message`, and save it for reorders.
+
+### Past storms report
+
+“Run report” on the client page replays NOAA's archive (back to late 2020) against the client's located customers: which storm days hit which customers, at the client's threshold. A year takes a few minutes and runs in the background. It's the sales demo (“hail hit 112 of your customers on 9 days last year”) and the first test with a new client's real list.
+
+### Turning it on for a client
+
+1. Import their past customers and wait for them to be located. Check the “Couldn't locate” list.
+2. Run a 12-month report and go over it with the contractor. Do the storm days match storms he remembers?
+3. In Settings, fill in the business postal address and the storm summary address, set the threshold, and set the shadow address to your inbox. Then tick “Check customers' addresses for hail every morning.”
+4. Through the first storms, everything goes to the shadow address. Clear it when the hits look right.
+
+The server must be able to reach `noaa-mrms-pds.s3.amazonaws.com`, `www.spc.noaa.gov` and `geocoding.geo.census.gov`, plus Resend.
+
 ## Not built yet
 
 - A login for contractors. The dashboard is agency-only for now.
 - Text messages, multi-step sequences, the CRM screens and pipeline beyond the contacts list (see the CRM path in `spec.md`).
 - Choosing a calendar other than the account's main one.
 - Google's app verification, needed past 100 connected users or to remove the warning screen.
+- Storm alerts: automatic Smartpress ordering (no public API found; ask Smartpress), neighborhood postcards (phase 2), wind damage, text messages, and self-serve signup for roofers who aren't clients.

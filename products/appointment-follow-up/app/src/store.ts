@@ -4,6 +4,7 @@ import type { Db } from "./db.ts";
 import { randomToken } from "./crypto.ts";
 import type { ContactLookup, ContactMatch } from "./rules.ts";
 import { defaultSettings, parseSettings, type ClientSettings, type TemplateType } from "./settings.ts";
+import { StormStore } from "./storm/store.ts";
 import { DEFAULT_TEMPLATES, type Template } from "./templates.ts";
 
 export interface Client {
@@ -64,6 +65,13 @@ export interface Contact {
   notes: string | null;
   source: string;
   createdAt: number;
+  isCustomer: boolean;
+  jobDate: string | null;
+  stormOptOut: boolean;
+  geocodeStatus: "matched" | "not_found" | "error" | null;
+  geocodeNote: string | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 type Row = Record<string, unknown>;
@@ -119,14 +127,23 @@ function toContact(row: Row): Contact {
     notes: (row.notes as string | null) ?? null,
     source: row.source as string,
     createdAt: row.created_at as number,
+    isCustomer: row.is_customer === 1,
+    jobDate: (row.job_date as string | null) ?? null,
+    stormOptOut: row.storm_opt_out === 1,
+    geocodeStatus: (row.geocode_status as Contact["geocodeStatus"]) ?? null,
+    geocodeNote: (row.geocode_note as string | null) ?? null,
+    lat: (row.lat as number | null) ?? null,
+    lon: (row.lon as number | null) ?? null,
   };
 }
 
 export class Store {
   private readonly db: Db;
+  readonly storm: StormStore;
 
   constructor(db: Db) {
     this.db = db;
+    this.storm = new StormStore(db);
   }
 
   // Clients
@@ -258,7 +275,12 @@ export class Store {
   }
 
   /** Adds a contact, or updates the existing one with the same email. Returns its id. */
-  upsertContact(clientId: number, c: Omit<Contact, "id" | "clientId" | "createdAt">, phoneDigits: string, now: number): number {
+  upsertContact(
+    clientId: number,
+    c: Pick<Contact, "firstName" | "lastName" | "email" | "phone" | "street" | "city" | "state" | "zip" | "service" | "insuranceClaim" | "notes" | "source">,
+    phoneDigits: string,
+    now: number,
+  ): number {
     const email = c.email?.toLowerCase() ?? null;
     const existing = email
       ? (this.db.prepare("SELECT id FROM contacts WHERE client_id = ? AND email = ?").get(clientId, email) as { id: number } | undefined)
@@ -267,10 +289,12 @@ export class Store {
     if (existing) {
       this.db
         .prepare(
-          `UPDATE contacts SET first_name = ?, last_name = ?, email = ?, phone = ?, phone_digits = ?, street = ?, city = ?,
+          `UPDATE contacts SET
+             geocode_status = CASE WHEN street IS ? AND city IS ? AND state IS ? AND zip IS ? THEN geocode_status ELSE NULL END,
+             first_name = ?, last_name = ?, email = ?, phone = ?, phone_digits = ?, street = ?, city = ?,
              state = ?, zip = ?, service = ?, insurance_claim = ?, notes = ?, updated_at = ? WHERE id = ?`,
         )
-        .run(...values, now, existing.id);
+        .run(c.street, c.city, c.state, c.zip, ...values, now, existing.id);
       return existing.id;
     }
     const result = this.db
@@ -281,6 +305,62 @@ export class Store {
       )
       .run(...values, clientId, c.source, now, now);
     return Number(result.lastInsertRowid);
+  }
+
+  contact(id: number): Contact | undefined {
+    const row = this.db.prepare("SELECT * FROM contacts WHERE id = ?").get(id) as Row | undefined;
+    return row ? toContact(row) : undefined;
+  }
+
+  /**
+   * Adds imported past customers, matching existing contacts by email, then by phone.
+   * Matched contacts keep their details unless the import fills a blank, and are marked as customers.
+   */
+  importCustomers(
+    clientId: number,
+    customers: { firstName: string; lastName: string; email: string | null; phone: string | null; phoneDigits: string; street: string; city: string; state: string; zip: string; jobDate: string | null }[],
+    now: number,
+  ): { added: number; updated: number } {
+    let added = 0;
+    let updated = 0;
+    this.db.exec("BEGIN");
+    try {
+      const byEmail = this.db.prepare("SELECT id FROM contacts WHERE client_id = ? AND email = ?");
+      const byPhone = this.db.prepare("SELECT id FROM contacts WHERE client_id = ? AND phone_digits = ?");
+      for (const c of customers) {
+        const match = ((c.email ? byEmail.get(clientId, c.email) : undefined) ?? (c.phoneDigits ? byPhone.get(clientId, c.phoneDigits) : undefined)) as
+          | { id: number }
+          | undefined;
+        if (match) {
+          this.db
+            .prepare(
+              `UPDATE contacts SET
+                 geocode_status = CASE WHEN street IS NULL OR street = '' OR (street IS ? AND zip IS ?) THEN geocode_status ELSE NULL END,
+                 first_name = CASE WHEN first_name = '' THEN ? ELSE first_name END,
+                 last_name = CASE WHEN last_name = '' THEN ? ELSE last_name END,
+                 email = COALESCE(email, ?), phone = COALESCE(phone, ?), phone_digits = COALESCE(phone_digits, ?),
+                 street = ?, city = ?, state = ?, zip = ?,
+                 job_date = COALESCE(?, job_date), is_customer = 1, updated_at = ? WHERE id = ?`,
+            )
+            .run(c.street, c.zip, c.firstName, c.lastName, c.email, c.phone, c.phoneDigits || null, c.street, c.city, c.state, c.zip, c.jobDate, now, match.id);
+          updated++;
+        } else {
+          this.db
+            .prepare(
+              `INSERT INTO contacts (client_id, first_name, last_name, email, phone, phone_digits, street, city, state, zip, job_date,
+                 is_customer, source, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'import', ?, ?)`,
+            )
+            .run(clientId, c.firstName, c.lastName, c.email, c.phone, c.phoneDigits || null, c.street, c.city, c.state, c.zip, c.jobDate, now, now);
+          added++;
+        }
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+    return { added, updated };
   }
 
   contacts(clientId: number, limit = 200): Contact[] {

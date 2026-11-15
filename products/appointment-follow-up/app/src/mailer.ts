@@ -9,6 +9,8 @@ export interface OutgoingEmail {
   text: string;
   /** The same key never sends twice, even if the app crashes between sending and recording. */
   idempotencyKey: string;
+  /** Extra headers, like List-Unsubscribe on storm emails. */
+  headers?: Record<string, string>;
 }
 
 export interface Mailer {
@@ -40,6 +42,7 @@ export class ResendMailer implements Mailer {
         subject: email.subject,
         // Plain text only: these should read like a personal note.
         text: email.text,
+        headers: email.headers && Object.keys(email.headers).length ? email.headers : undefined,
       }),
     });
     const data = (await response.json().catch(() => ({}))) as { id?: string; message?: string; name?: string };
